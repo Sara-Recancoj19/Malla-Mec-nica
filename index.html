@@ -1,0 +1,80 @@
+import pandas as pd
+import ipywidgets as widgets
+from IPython.display import display
+from google.colab import output
+
+# =======================
+# 1) Lista de cursos (ejemplo)
+# =======================
+cursos = [
+    {"codigo": "3000", "nombre": "Matemática Intermedia 1", "creditos": 9, "prereq": [], "semestre":1},
+    {"codigo": "3006", "nombre": "Matemática Básica 1", "creditos": 9, "prereq": [], "semestre":1},
+    {"codigo": "3013", "nombre": "Matemática Aplicada 3", "creditos": 9, "prereq": ["3006"], "semestre":2},
+    {"codigo": "3021", "nombre": "Ingeniería Eléctrica 2", "creditos": 6, "prereq": ["3006"], "semestre":2},
+    {"codigo": "3025", "nombre": "Resistencia de Materiales 1", "creditos": 4, "prereq": ["3021"], "semestre":3},
+    {"codigo": "3005", "nombre": "Mecánica Analítica 2", "creditos": 3, "prereq": ["3013"], "semestre":3},
+    {"codigo": "3023", "nombre": "Estadística 1", "creditos": 6, "prereq": ["3013","3005"], "semestre":4},
+    {"codigo": "3034", "nombre": "Matemática Intermedia 3", "creditos": 5, "prereq": ["3013"], "semestre":4},
+    {"codigo": "3090", "nombre": "Termodinámica 1", "creditos": 5, "prereq": ["3021"], "semestre":5},
+    # ...agrega todos...
+]
+df = pd.DataFrame(cursos)
+
+# =======================
+# 2) Estado de cursos
+# =======================
+estado = {c["codigo"]:False for c in cursos}
+
+# =======================
+# 3) HTML widget para la malla (único)
+# =======================
+malla_html = widgets.HTML()
+display(malla_html)  # se muestra una sola vez
+
+# =======================
+# 4) Función que genera el HTML de la malla
+# =======================
+def generar_html():
+    total = sum(row["creditos"] for _,row in df.iterrows() if estado[row["codigo"]])
+    semestres = sorted(df["semestre"].unique())
+    max_rows = df.groupby("semestre").size().max()
+    html = f"<h3>Créditos aprobados: {total}</h3>"
+    html += "<table style='border-collapse:collapse;'>"
+    html += "<tr>" + "".join([f"<th style='border:1px solid black; padding:5px;'>Semestre {s}</th>" for s in semestres]) + "</tr>"
+    for r in range(max_rows):
+        html += "<tr>"
+        for s in semestres:
+            cursos_sem = df[df['semestre']==s].reset_index(drop=True)
+            if r < len(cursos_sem):
+                row = cursos_sem.loc[r]
+                aprobado = estado[row["codigo"]]
+                puede_llevar = all(estado.get(req,False) for req in row["prereq"])
+                if aprobado:
+                    color="#90EE90"   # verde claro
+                elif puede_llevar:
+                    color="#D3D3D3"   # gris claro
+                else:
+                    color="#505050"   # gris oscuro
+                checked = "checked" if aprobado else ""
+                html += f"<td style='border:1px solid black; background:{color}; padding:5px;'>"
+                html += f"<input type='checkbox' onchange='google.colab.kernel.invokeFunction(\"notebook.aprobar\", [\"{row['codigo']}\"], {{}})' {checked}>"
+                html += f"<br>{row['codigo']} - {row['nombre']}<br>({row['creditos']} cr)</td>"
+            else:
+                html += "<td></td>"
+        html += "</tr>"
+    html += "</table>"
+    return html
+
+# =======================
+# 5) Callback para marcar aprobado
+# =======================
+def aprobar_callback(codigo):
+    estado[codigo] = not estado[codigo]
+    malla_html.value = generar_html()
+
+output.register_callback('notebook.aprobar', aprobar_callback)
+
+# =======================
+# 6) Mostrar malla inicial (sin duplicados)
+# =======================
+malla_html.value = generar_html()
