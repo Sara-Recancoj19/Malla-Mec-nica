@@ -1,49 +1,153 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Malla Curricular Interactiva</title>
 
 <style>
 :root{
-  --green-approved:#c7f0d6;
-  --gray-available:#e6e6e6;
-  --gray-locked:#9a9a9a;
+  --green-approved:#7fd7a5;     /* verde aprobado */
+  --green-available:#d9f5e4;    /* verde claro disponible */
+  --gray-locked:#b0b0b0;        /* gris bloqueado */
+  --card-bg:#ffffff;
+  --shadow:0 4px 12px rgba(0,0,0,0.08);
   --badge-bg:#ffd54f;
 }
-body{font-family:system-ui;margin:16px;background:#f7fafc}
-.grid-wrap{display:flex;gap:12px;overflow:auto}
-.semester{min-width:220px;background:#fff;padding:10px;border-radius:10px}
-.sem-title{text-align:center;font-weight:700;margin-bottom:8px}
-.course{padding:8px;border-radius:8px;margin-bottom:8px;cursor:pointer}
-.course.locked{background:var(--gray-locked);color:#fff}
-.course.available{background:var(--gray-available)}
-.course.approved{background:var(--green-approved)}
-.meta{display:flex;justify-content:space-between;font-size:12px}
-.badge{background:var(--badge-bg);padding:3px 6px;border-radius:999px;font-size:11px}
-.btn{padding:6px 10px;border-radius:8px}
+
+body{
+  font-family:system-ui, Arial;
+  background:#f4f6f8;
+  margin:16px;
+}
+
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+}
+
+h1{margin:0;font-size:18px}
+.sub{font-size:13px;color:#555;margin:0}
+
+.counter{
+  background:var(--card-bg);
+  box-shadow:var(--shadow);
+  padding:10px 14px;
+  border-radius:10px;
+  min-width:240px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.counter strong{
+  font-size:20px;
+  color:#1b5e20;
+}
+
+.grid-wrap{
+  margin-top:20px;
+  display:flex;
+  gap:14px;
+  overflow-x:auto;
+  padding-bottom:30px;
+}
+
+.semester{
+  min-width:220px;
+  background:var(--card-bg);
+  box-shadow:var(--shadow);
+  border-radius:10px;
+  padding:10px;
+}
+
+.sem-title{
+  text-align:center;
+  font-weight:700;
+  margin-bottom:10px;
+}
+
+.course{
+  padding:8px 10px;
+  border-radius:8px;
+  margin-bottom:8px;
+  cursor:pointer;
+  user-select:none;
+}
+
+.course.approved{
+  background:var(--green-approved);
+}
+
+.course.available{
+  background:var(--green-available);
+}
+
+.course.locked{
+  background:var(--gray-locked);
+  color:white;
+  cursor:not-allowed;
+}
+
+.course .name{
+  font-weight:600;
+  font-size:13px;
+}
+
+.meta{
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+}
+
+.badge{
+  background:var(--badge-bg);
+  padding:3px 6px;
+  border-radius:999px;
+  font-size:11px;
+}
+
+.btn{
+  border:1px solid #ccc;
+  background:white;
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Malla Curricular — Ingeniería Mecánica</h2>
-<p>✔️ = Curso obligatorio</p>
+<header>
+  <div>
+    <h1>Malla Curricular — Ingeniería Mecánica</h1>
+    <p class="sub">Haz clic en un curso para marcarlo como aprobado</p>
+  </div>
 
-<div>
-  Créditos aprobados: <strong id="creditCount">0</strong>
+  <div class="counter">
+    <div>
+      Créditos aprobados<br>
+      <strong id="creditCount">0</strong>
+    </div>
+    <div style="border-left:1px solid #ddd;padding-left:10px">
+      Créditos totales<br>
+      <strong id="totalCredits">0</strong>
+    </div>
+  </div>
+
   <button class="btn" id="resetBtn">Reset</button>
-</div>
+</header>
 
-<br>
 <section class="grid-wrap" id="grid"></section>
 
 <script>
 /* ================= CURSOS ================= */
 const cursos = [
- 
-    {"codigo": "3000", "nombre": "Área Matemática Básica 1", "creditos": 9, "prereq": [], "semestre": 1},
+   {"codigo": "3000", "nombre": "Área Matemática Básica 1", "creditos": 9, "prereq": [], "semestre": 1},
     {"codigo": "3001", "nombre": "Química General 1", "creditos": 7, "prereq": [], "semestre": 1},
     {"codigo": "3003", "nombre": "Área Social Humanística 1", "creditos": 3, "prereq": [], "semestre": 1},
     {"codigo": "3004", "nombre": "Área Técnica Complememtaria 1", "creditos": 4, "prereq": [], "semestre": 1},
@@ -116,7 +220,7 @@ const cursos = [
 
 /* ================= OBLIGATORIOS ================= */
 const obligatorios = new Set([
-  "3000","3001","3003","3004","3005",
+   "3000","3001","3003","3004","3005",
   "3006","3007","3011","3084","3083","3085",
   "3013","3014","3020","3021","3022","3023","3090","3025",
   "3027","3091","3034","3029","3033","3092",
@@ -164,14 +268,14 @@ function render(){
       const d = document.createElement("div");
       d.className = "course";
 
-      const state = approved.has(c.codigo)
+      const estado = approved.has(c.codigo)
         ? "approved"
         : isAvailable(c) ? "available" : "locked";
 
-      d.classList.add(state);
+      d.classList.add(estado);
 
       d.innerHTML = `
-        <strong>${c.codigo}</strong> — ${c.nombre}
+        <div class="name">${c.codigo} — ${c.nombre}</div>
         <div class="meta">
           <span>${c.creditos} cr</span>
           ${obligatorios.has(c.codigo) ? "<span class='badge'>✔️</span>" : ""}
@@ -179,11 +283,10 @@ function render(){
       `;
 
       d.onclick = ()=>{
-        if(approved.has(c.codigo)){
-          approved.delete(c.codigo);
-        }else if(isAvailable(c)){
-          approved.add(c.codigo);
-        }
+        if(estado === "locked") return;
+        approved.has(c.codigo)
+          ? approved.delete(c.codigo)
+          : approved.add(c.codigo);
         saveApproved();
         render();
       };
@@ -194,16 +297,17 @@ function render(){
     grid.appendChild(col);
   });
 
-  const total = [...approved].reduce((s,code)=>{
+  const total = cursos.reduce((s,c)=>s+c.creditos,0);
+  const aprobados = [...approved].reduce((s,code)=>{
     const c = cursos.find(x=>x.codigo===code);
     return s + (c ? c.creditos : 0);
   },0);
 
-  document.getElementById("creditCount").textContent = total;
-  document.getElementById("resetBtn").disabled = approved.size===0;
+  document.getElementById("creditCount").textContent = aprobados;
+  document.getElementById("totalCredits").textContent = total;
 }
 
-/* ================= EVENTOS ================= */
+/* ================= RESET ================= */
 document.getElementById("resetBtn").onclick = ()=>{
   approved.clear();
   saveApproved();
